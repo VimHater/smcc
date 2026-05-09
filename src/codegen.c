@@ -14,12 +14,13 @@ typedef struct {
     Var vars[256];
     int num_vars;
     int stack_size;
+    int next_offset;
     int label_count;
 } CodegenCtx;
 
 static int ctx_add_var(CodegenCtx* ctx, const char* name) {
-    ctx->stack_size += 4;
-    int offset = ctx->stack_size;
+    ctx->next_offset += 4;
+    int offset = ctx->next_offset;
     ctx->vars[ctx->num_vars].name = strdup(name);
     ctx->vars[ctx->num_vars].offset = offset;
     ctx->num_vars++;
@@ -171,7 +172,7 @@ static void emit_expr(CodegenCtx* ctx, Expr* e) {
 
         case EXPR_IDENT: {
             int offset = ctx_find_var(ctx, e->ident);
-            printf("    lw $t0, %d($sp)\n", offset);
+            printf("    lw $t0, %d($fp)\n", offset);
             break;
         }
 
@@ -186,6 +187,7 @@ static void emit_expr(CodegenCtx* ctx, Expr* e) {
             switch (e->bin_op) {
                 case TOK_PLUS:
                     printf("    add $t0, $t1, $t0\n");
+                    break;
                 case TOK_MINUS:
                     printf("    sub $t0, $t1, $t0\n");
                     break;
@@ -324,7 +326,7 @@ static void emit_expr(CodegenCtx* ctx, Expr* e) {
         case EXPR_ASSIGN: {
             emit_expr(ctx, e->assign_val);
             int offset = ctx_find_var(ctx, e->assign_target->ident);
-            printf("    sw $t0, %d($sp)\n", offset);
+            printf("    sw $t0, %d($fp)\n", offset);
             break;
         }
 
@@ -370,7 +372,9 @@ static void emit_stmt(CodegenCtx* ctx, Stmt* s) {
                 emit_expr(ctx, s->return_expr);
                 printf("    move $v0, $t0\n");
             }
+            printf("    move $sp, $fp\n");
             printf("    lw $ra, 0($sp)\n");
+            printf("    lw $fp, 4($sp)\n");
             printf("    addiu $sp, $sp, %d\n", ctx->stack_size);
             printf("    jr $ra\n");
             break;
@@ -383,7 +387,7 @@ static void emit_stmt(CodegenCtx* ctx, Stmt* s) {
             int offset = ctx_add_var(ctx, s->var_name);
             if (s->var_init) {
                 emit_expr(ctx, s->var_init);
-                printf("    sw $t0, %d($sp)\n", offset);
+                printf("    sw $t0, %d($fp)\n", offset);
             }
             break;
         }
@@ -439,33 +443,28 @@ static void emit_stmt(CodegenCtx* ctx, Stmt* s) {
 
 static void emit_function(CodegenCtx* ctx, Function* fn) {
     ctx->num_vars = 0;
-    ctx->stack_size = 4;  // room for $ra
+    ctx->stack_size = 8;  // room for $ra + $fp
 
-    // add params as vars
-    for (int i = 0; i < fn->num_params; i++)
-        ctx_add_var(ctx, fn->params[i].param_name);
-
-    // pre-scan body for var decls to calc stack size
+    ctx->stack_size += fn->num_params * 4;
     for (int i = 0; i < fn->num_stmts; i++) {
-        if (fn->body[i]->type == STMT_VAR_DECL) ctx->stack_size += 4;
+        if (fn->body[i]->type == STMT_VAR_DECL)
+            ctx->stack_size += 4;
     }
 
-    // reset vars, will re-add during emit
-    ctx->num_vars = 0;
     int frame = ctx->stack_size;
-    ctx->stack_size = 4;
+    ctx->next_offset = 4; // $ra at 0, $fp at 4, vars start at 8
 
     printf("%s:\n", fn->name);
     printf("    addiu $sp, $sp, -%d\n", frame);
     printf("    sw $ra, 0($sp)\n");
+    printf("    sw $fp, 4($sp)\n");
+    printf("    move $fp, $sp\n");
 
     // store params from $a0-$a3
     for (int i = 0; i < fn->num_params && i < 4; i++) {
         int offset = ctx_add_var(ctx, fn->params[i].param_name);
-        printf("    sw $a%d, %d($sp)\n", i, offset);
+        printf("    sw $a%d, %d($fp)\n", i, offset);
     }
-
-    ctx->stack_size = frame;
 
     for (int i = 0; i < fn->num_stmts; i++) {
         emit_stmt(ctx, fn->body[i]);
@@ -473,7 +472,6 @@ static void emit_function(CodegenCtx* ctx, Function* fn) {
 }
 
 void codegen(ASTTree* tree) {
-    printf(".set noreorder\n");
     printf(".option pic0\n");
     printf(".text\n");
     printf(".globl __start\n");

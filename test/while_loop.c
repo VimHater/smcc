@@ -6,5 +6,6 @@ int main()
         sum = sum + n;
         n = n - 1;
     }
-    return sum;
+    print_int(sum);
+    return 0;
 }

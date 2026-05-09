@@ -45,8 +45,7 @@ int main(int argc, char **argv)
     ASTTree *tree = parse(&lexer);
 
     char asm_path[256];
-    system_run("mkdir -p .build");
-    snprintf(asm_path, sizeof(asm_path), ".build/%s.s", output);
+    snprintf(asm_path, sizeof(asm_path), "%s.s", output);
     FILE *asm_file = freopen(asm_path, "w", stdout);
     if (!asm_file) {
         fprintf(stderr, "[ERROR] cannot create '%s'\n", asm_path);

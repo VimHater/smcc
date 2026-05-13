@@ -1,3 +1,6 @@
 compiler
 compiler.exe
 .build/
+build/
+test/build/
+*.s

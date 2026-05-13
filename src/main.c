@@ -15,7 +15,7 @@ int main(int argc, char **argv)
 
     while (argc > 0) {
         char *arg = shift(&argc, &argv);
-        if (strcmp(arg, "-o") == 0) {
+        if (strncmp(arg, "-o", 256) == 0) {
             output = shift(&argc, &argv);
         } else {
             input = arg;

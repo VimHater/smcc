@@ -3,5 +3,6 @@ int main()
     int a = 10;
     int b = 3;
     int c = a + b * 2 - 1;
-    return c;
+    print_int(c);
+    return 0;
 }

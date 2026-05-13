@@ -1,10 +1,11 @@
-int add(int a, int b)
+void add(int a, int b)
 {
-    return a + b;
+    int c = a + b;
+    print_int(c);
 }
 
 int main()
 {
-    int x = add(3, 4);
-    return x;
+    add(3, 4);
+    return 0;
 }

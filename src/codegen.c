@@ -18,7 +18,8 @@ typedef struct {
     int label_count;
 } CodegenCtx;
 
-static int ctx_add_var(CodegenCtx* ctx, const char* name) {
+static int ctx_add_var(CodegenCtx* ctx, const char* name)
+{
     ctx->next_offset += 4;
     int offset = ctx->next_offset;
     ctx->vars[ctx->num_vars].name = strdup(name);
@@ -27,7 +28,8 @@ static int ctx_add_var(CodegenCtx* ctx, const char* name) {
     return offset;
 }
 
-static int ctx_find_var(CodegenCtx* ctx, const char* name) {
+static int ctx_find_var(CodegenCtx* ctx, const char* name)
+{
     for (int i = 0; i < ctx->num_vars; i++) {
         if (strcmp(ctx->vars[i].name, name) == 0) return ctx->vars[i].offset;
     }
@@ -35,7 +37,8 @@ static int ctx_find_var(CodegenCtx* ctx, const char* name) {
     exit(1);
 }
 
-static int new_label(CodegenCtx* ctx) {
+static int new_label(CodegenCtx* ctx)
+{
     return ctx->label_count++;
 }
 
@@ -191,7 +194,8 @@ static void emit_builtin_print_int(CodegenCtx *ctx, Expr *e)
 }
 
 // Emit expression, result in $t0
-static void emit_expr(CodegenCtx* ctx, Expr* e) {
+static void emit_expr(CodegenCtx* ctx, Expr* e)
+{
     if (!e) return;
 
     switch (e->type) {
@@ -385,7 +389,8 @@ static void emit_expr(CodegenCtx* ctx, Expr* e) {
 
 static void emit_stmt(CodegenCtx* ctx, Stmt* s);
 
-static void emit_block(CodegenCtx* ctx, Stmt* s) {
+static void emit_block(CodegenCtx* ctx, Stmt* s)
+{
     if (s->type == STMT_BLOCK) {
         for (int i = 0; i < s->num_block_stmts; i++)
             emit_stmt(ctx, s->block_stmts[i]);
@@ -394,7 +399,8 @@ static void emit_block(CodegenCtx* ctx, Stmt* s) {
     }
 }
 
-static void emit_stmt(CodegenCtx* ctx, Stmt* s) {
+static void emit_stmt(CodegenCtx* ctx, Stmt* s)
+{
     if (!s) return;
 
     switch (s->type) {
@@ -468,7 +474,8 @@ static void emit_stmt(CodegenCtx* ctx, Stmt* s) {
     }
 }
 
-static void emit_function(CodegenCtx* ctx, Function* fn) {
+static void emit_function(CodegenCtx* ctx, Function* fn)
+{
     ctx->num_vars = 0;
     ctx->stack_size = 8;  // room for $ra + $fp
 
@@ -493,9 +500,13 @@ static void emit_function(CodegenCtx* ctx, Function* fn) {
     for (int i = 0; i < fn->num_stmts; i++) {
         emit_stmt(ctx, fn->body[i]);
     }
+
+    // implicit return for void functions
+    stack_epilogue(frame);
 }
 
-void codegen(ASTTree* tree) {
+void codegen(ASTTree* tree)
+{
     printf(".option pic0\n");
     printf(".text\n");
     printf(".globl __start\n");

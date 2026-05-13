@@ -80,6 +80,7 @@ static TokenType check_keyword(const char *start, int len)
     static const struct { const char *kw; TokenType type; } keywords[] = {
         {"int",      TOK_INT},
         {"char",     TOK_CHAR},
+        {"float",    TOK_FLOAT},
         {"void",     TOK_VOID},
         {"return",   TOK_RETURN},
         {"if",       TOK_IF},
@@ -242,6 +243,7 @@ const char *token_type_str(TokenType type)
     switch (type) {
         case TOK_INT_LIT:      return "INT_LIT";
         case TOK_CHAR_LIT:     return "CHAR_LIT";
+        case TOK_FLOAT_LIT:    return "FLOAT_LIT";
         case TOK_STRING_LIT:   return "STRING_LIT";
         case TOK_IDENT:        return "IDENT";
         case TOK_INT:          return "int";

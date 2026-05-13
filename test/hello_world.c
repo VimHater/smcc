@@ -11,6 +11,8 @@ int main()
     putchar(114);
     putchar(108);
     putchar(100);
+    putchar(33);
+    putchar(33);
     putchar(10);
     return 0;
 }

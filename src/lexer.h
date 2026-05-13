@@ -7,12 +7,14 @@ typedef enum {
     // Literals
     TOK_INT_LIT,
     TOK_CHAR_LIT,
+    TOK_FLOAT_LIT,
     TOK_STRING_LIT,
     TOK_IDENT,
 
     // Keywords
     TOK_INT,
     TOK_CHAR,
+    TOK_FLOAT,
     TOK_VOID,
     TOK_RETURN,
     TOK_IF,

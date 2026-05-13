@@ -31,7 +31,7 @@ int main(int argc, char **argv)
     FILE *f = fopen(input, "r");
     if (!f) {
         if (stderr_is_tty())
-            fprintf(stderr, ANSI_RED "[ERROR]" ANSI_RESET " cannot open '%s'\n", input);
+            fprintf(stderr, ANSI_RED"[ERROR]" ANSI_RESET" cannot open '%s'\n", input);
         else
             fprintf(stderr, "[ERROR] cannot open '%s'\n", input);
         return 1;
@@ -53,7 +53,7 @@ int main(int argc, char **argv)
     FILE *asm_file = freopen(asm_path, "w", stdout);
     if (!asm_file) {
         if (stderr_is_tty())
-            fprintf(stderr, ANSI_RED "[ERROR]" ANSI_RESET " cannot create '%s'\n", asm_path);
+            fprintf(stderr, ANSI_RED"[ERROR]" ANSI_RESET" cannot create '%s'\n", asm_path);
         else
             fprintf(stderr, "[ERROR] cannot create '%s'\n", asm_path);
         return 1;

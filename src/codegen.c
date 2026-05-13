@@ -39,6 +39,39 @@ static int new_label(CodegenCtx* ctx) {
     return ctx->label_count++;
 }
 
+// Push register onto stack
+static void stack_push(const char *reg)
+{
+    printf("    addiu $sp, $sp, -4\n");
+    printf("    sw %s, 0($sp)\n", reg);
+}
+
+// Pop top of stack into register
+static void stack_pop(const char *reg)
+{
+    printf("    lw %s, 0($sp)\n", reg);
+    printf("    addiu $sp, $sp, 4\n");
+}
+
+// Set up function stack frame: save $ra, $fp, set $fp
+static void stack_prologue(int frame)
+{
+    printf("    addiu $sp, $sp, -%d\n", frame);
+    printf("    sw $ra, 0($sp)\n");
+    printf("    sw $fp, 4($sp)\n");
+    printf("    move $fp, $sp\n");
+}
+
+// Tear down function stack frame: restore $sp, $ra, $fp, return
+static void stack_epilogue(int frame)
+{
+    printf("    move $sp, $fp\n");
+    printf("    lw $ra, 0($sp)\n");
+    printf("    lw $fp, 4($sp)\n");
+    printf("    addiu $sp, $sp, %d\n", frame);
+    printf("    jr $ra\n");
+}
+
 // Built-in function table
 typedef void (*BuiltinEmit)(CodegenCtx *ctx, Expr *e);
 
@@ -60,7 +93,7 @@ static Builtin builtins[] = {
     {"putchar",   1, emit_builtin_putchar},
     {"getchar",   0, emit_builtin_getchar},
     {"print_int", 1, emit_builtin_print_int},
-    {NULL, 0, NULL}, // sentinel
+    {NULL, 0, NULL},
 };
 
 static Builtin *find_builtin(const char *name)
@@ -178,11 +211,9 @@ static void emit_expr(CodegenCtx* ctx, Expr* e) {
 
         case EXPR_BINARY:
             emit_expr(ctx, e->lhs);
-            printf("    addiu $sp, $sp, -4\n");
-            printf("    sw $t0, 0($sp)\n");
+            stack_push("$t0");
             emit_expr(ctx, e->rhs);
-            printf("    lw $t1, 0($sp)\n");
-            printf("    addiu $sp, $sp, 4\n");
+            stack_pop("$t1");
             // $t1 = lhs, $t0 = rhs
             switch (e->bin_op) {
                 case TOK_PLUS:
@@ -218,7 +249,7 @@ static void emit_expr(CodegenCtx* ctx, Expr* e) {
                     break;
                 case TOK_LSHIFT:
                 case TOK_RSHIFT:
-                    fprintf(stderr, "TODO: add variable shift\n");
+                    fprintf(stderr, "[TODO]: add variable shift\n");
                     exit(1);
                 case TOK_EQ: {
                     int lbl = new_label(ctx);
@@ -372,11 +403,7 @@ static void emit_stmt(CodegenCtx* ctx, Stmt* s) {
                 emit_expr(ctx, s->return_expr);
                 printf("    move $v0, $t0\n");
             }
-            printf("    move $sp, $fp\n");
-            printf("    lw $ra, 0($sp)\n");
-            printf("    lw $fp, 4($sp)\n");
-            printf("    addiu $sp, $sp, %d\n", ctx->stack_size);
-            printf("    jr $ra\n");
+            stack_epilogue(ctx->stack_size);
             break;
 
         case STMT_EXPR:
@@ -455,10 +482,7 @@ static void emit_function(CodegenCtx* ctx, Function* fn) {
     ctx->next_offset = 4; // $ra at 0, $fp at 4, vars start at 8
 
     printf("%s:\n", fn->name);
-    printf("    addiu $sp, $sp, -%d\n", frame);
-    printf("    sw $ra, 0($sp)\n");
-    printf("    sw $fp, 4($sp)\n");
-    printf("    move $fp, $sp\n");
+    stack_prologue(frame);
 
     // store params from $a0-$a3
     for (int i = 0; i < fn->num_params && i < 4; i++) {

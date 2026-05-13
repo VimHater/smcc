@@ -32,7 +32,7 @@ void system_run(const char *cmd)
     int ret = system(cmd);
     if (ret != 0) {
         if (stderr_is_tty())
-            fprintf(stderr, ANSI_RED "[ERROR]" ANSI_RESET " command exit with code %d\n", ret);
+            fprintf(stderr, ANSI_RED"[ERROR]" ANSI_RESET" command exit with code %d\n", ret);
         else
             fprintf(stderr, "[ERROR] command exit with code %d\n", ret);
         exit(1);
